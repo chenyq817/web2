@@ -1,6 +1,9 @@
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { Header } from "@/components/layout/header";
 import {
   Card,
@@ -16,24 +19,31 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { newsItems } from '@/lib/news-data';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { WithId } from '@/firebase';
 
-const NewsCard = ({ item }: { item: typeof newsItems[0] }) => {
-  const image = PlaceHolderImages.find(img => img.id === item.imageId);
+type NewsItem = {
+  title: string;
+  category: string;
+  excerpt: string;
+  content: string;
+  imageBase64: string;
+  date: string;
+};
+
+const NewsCard = ({ item }: { item: WithId<NewsItem> }) => {
   return (
     <Card className="flex flex-col overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <Link href={`/news/${item.id}`} className="flex flex-col flex-grow">
-        {image && (
+        {item.imageBase64 && (
           <div className="relative aspect-video w-full">
             <Image
-              src={image.imageUrl}
-              alt={image.description}
+              src={item.imageBase64}
+              alt={item.title}
               fill
               className="object-cover"
-              data-ai-hint={image.imageHint}
             />
           </div>
         )}
@@ -56,11 +66,32 @@ const NewsCard = ({ item }: { item: typeof newsItems[0] }) => {
 };
 
 export default function NewsPage() {
-  const allNews = newsItems;
-  const academicNews = newsItems.filter(item => item.category === '学术');
-  const sportsNews = newsItems.filter(item => item.category === '体育');
-  const campusLifeNews = newsItems.filter(item => item.category === '校园生活' || item.category === "文体艺术");
-  const otherNews = newsItems.filter(item => item.category === '其他');
+  const firestore = useFirestore();
+  const newsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'news'), orderBy('date', 'desc'));
+  }, [firestore]);
+
+  const { data: allNews, isLoading } = useCollection<NewsItem>(newsQuery);
+
+  const academicNews = useMemo(() => allNews?.filter(item => item.category === '学术'), [allNews]);
+  const sportsNews = useMemo(() => allNews?.filter(item => item.category === '体育'), [allNews]);
+  const campusLifeNews = useMemo(() => allNews?.filter(item => item.category === '校园生活' || item.category === "文体艺术"), [allNews]);
+  const otherNews = useMemo(() => allNews?.filter(item => item.category === '其他'), [allNews]);
+
+  const renderNewsList = (news: WithId<NewsItem>[] | undefined, categoryName: string) => {
+    if (isLoading) {
+        return <div className="col-span-full flex justify-center items-center p-16"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+    if (!news || news.length === 0) {
+        return <p className="text-center text-muted-foreground col-span-full py-8">暂无{categoryName}新闻。</p>;
+    }
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {news.map((item) => <NewsCard key={item.id} item={item} />)}
+        </div>
+    );
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -76,29 +107,19 @@ export default function NewsPage() {
           </TabsList>
           
           <TabsContent value="all">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {allNews.length > 0 ? allNews.map((item) => <NewsCard key={item.id} item={item} />) : <p className="text-center text-muted-foreground col-span-full">暂无新闻。</p>}
-            </div>
+            {renderNewsList(allNews, '全部')}
           </TabsContent>
           <TabsContent value="academics">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {academicNews.length > 0 ? academicNews.map((item) => <NewsCard key={item.id} item={item} />) : <p className="text-center text-muted-foreground col-span-full">暂无学术新闻。</p>}
-            </div>
+            {renderNewsList(academicNews, '学术')}
           </TabsContent>
           <TabsContent value="sports">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {sportsNews.length > 0 ? sportsNews.map((item) => <NewsCard key={item.id} item={item} />) : <p className="text-center text-muted-foreground col-span-full">暂无体育新闻。</p>}
-            </div>
+            {renderNewsList(sportsNews, '体育')}
           </TabsContent>
           <TabsContent value="campus-life">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {campusLifeNews.length > 0 ? campusLifeNews.map((item) => <NewsCard key={item.id} item={item} />) : <p className="text-center text-muted-foreground col-span-full">暂无校园生活新闻。</p>}
-            </div>
+            {renderNewsList(campusLifeNews, '校园生活')}
           </TabsContent>
           <TabsContent value="other">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {otherNews.length > 0 ? otherNews.map((item) => <NewsCard key={item.id} item={item} />) : <p className="text-center text-muted-foreground col-span-full">暂无其他新闻。</p>}
-            </div>
+            {renderNewsList(otherNews, '其他')}
           </TabsContent>
         </Tabs>
       </main>

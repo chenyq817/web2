@@ -1,17 +1,15 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow for creating a news article snippet.
+ * @fileOverview A Genkit flow for creating a news article object.
  *
  * This flow takes news article data (title, content, category, and an image),
- * and generates stringified JSON objects for a new news item and a new
- * image placeholder. These strings are intended to be inserted into
- * `news-data.ts` and `placeholder-images.json` by a separate server action.
+ * and generates a structured JSON object for a new news item, ready to be
+ * inserted into Firestore.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { v4 as uuidv4 } from 'uuid';
 
 // Define the input schema for the flow
 const CreateNewsInputSchema = z.object({
@@ -22,59 +20,46 @@ const CreateNewsInputSchema = z.object({
 });
 export type CreateNewsInput = z.infer<typeof CreateNewsInputSchema>;
 
-// Define the output schema for the flow, which will be the stringified objects.
-const CreateNewsOutputSchema = z.object({
-  newsItemString: z.string().describe('The stringified JSON object for the new news item.'),
-  imageItemString: z.string().describe('The stringified JSON object for the new image placeholder item.'),
+// Define the output schema for the flow, which will be the news object.
+const NewsObjectSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  category: z.string(),
+  excerpt: z.string(),
+  imageBase64: z.string(),
+  date: z.string(),
 });
-export type CreateNewsOutput = z.infer<typeof CreateNewsOutputSchema>;
+export type NewsObject = z.infer<typeof NewsObjectSchema>;
 
 
 /**
  * The main exported function that clients will call.
  * This is a simple wrapper around the Genkit flow.
  */
-export async function createNewsSnippet(input: CreateNewsInput): Promise<CreateNewsOutput> {
-  return createNewsSnippetFlow(input);
+export async function createNewsObject(input: CreateNewsInput): Promise<NewsObject> {
+  return createNewsObjectFlow(input);
 }
 
 
 // Define the Genkit flow
-const createNewsSnippetFlow = ai.defineFlow(
+const createNewsObjectFlow = ai.defineFlow(
   {
-    name: 'createNewsSnippetFlow',
+    name: 'createNewsObjectFlow',
     inputSchema: CreateNewsInputSchema,
-    outputSchema: CreateNewsOutputSchema,
+    outputSchema: NewsObjectSchema,
   },
   async (input: CreateNewsInput) => {
-
-    // 1. Generate unique IDs for the new content
-    const newsId = uuidv4().substring(0, 8); // A shorter ID for news
-    const imageId = `news-${newsId}`;
-
-    // 2. Create the new image placeholder object
-    const newImageEntry = {
-      id: imageId,
-      description: input.title, // Use news title as description
-      imageUrl: input.imageBase64,
-      imageHint: "custom upload"
-    };
-
-    // 3. Create the new news item object
+    
+    // Create the new news item object
     const newNewsItem = {
-      id: newsId,
       title: input.title,
       category: input.category,
       excerpt: input.content.substring(0, 100).replace(/\n/g, ' ') + '...',
       content: input.content,
-      imageId: imageId,
+      imageBase64: input.imageBase64,
       date: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
     };
       
-    // 4. Return the stringified versions of the objects
-    return {
-      newsItemString: JSON.stringify(newNewsItem, null, 2),
-      imageItemString: JSON.stringify(newImageEntry, null, 2),
-    };
+    return newNewsItem;
   }
 );

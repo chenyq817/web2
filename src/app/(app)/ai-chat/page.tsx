@@ -439,8 +439,8 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   }
 
   return (
-    <div className={cn("flex gap-3", isUser ? "justify-end text-right" : "justify-start text-left")}>
-      <div className={cn("max-w-[80%] space-y-2 text-sm", isUser ? "items-end" : "items-start")}>
+    <div className={cn("flex gap-3", isUser ? "justify-end text-right" : "justify-start text-left")}> 
+      <div className={cn("max-w-[80%] space-y-2 text-sm", isUser ? "items-end" : "items-start")}> 
         <div
           className={cn(
             "whitespace-pre-wrap rounded-2xl px-4 py-3 leading-relaxed shadow-sm",

@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
-import { createNewsSnippet } from '@/ai/flows/create-news-flow';
-import { updateNewsFiles } from './actions';
+import { createNewsObject } from '@/ai/flows/create-news-flow';
+import { useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 const newsSchema = z.object({
   title: z.string().min(5, { message: '标题必须至少为5个字符。' }),
@@ -29,6 +31,8 @@ type NewsFormValues = z.infer<typeof newsSchema>;
 
 export default function CreateNewsPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -69,27 +73,35 @@ export default function CreateNewsPage() {
   };
 
   const onSubmit = async (data: NewsFormValues) => {
+    if (!firestore) {
+        toast({
+            variant: 'destructive',
+            title: '错误',
+            description: '数据库服务未初始化。'
+        });
+        return;
+    }
     setIsSubmitting(true);
     try {
-      // 1. Call the Genkit flow to get the code snippets as strings
-      const snippets = await createNewsSnippet(data);
+      // 1. Call the Genkit flow to get the structured news object
+      const newsObjectFromFlow = await createNewsObject(data);
       
-      // 2. Call the new server action to update the files on the server
-      const result = await updateNewsFiles({
-        newsItemString: snippets.newsItemString,
-        imageItemString: snippets.imageItemString,
-      });
+      const finalNewsObject = {
+        ...newsObjectFromFlow,
+        createdAt: serverTimestamp(),
+      };
 
-      if (result.success) {
-        toast({
-          title: '发布成功！',
-          description: '新闻发布成功。请刷新页面查看最新应用状态。',
-        });
-        form.reset();
-        setImagePreview(null);
-      } else {
-        throw new Error(result.message);
-      }
+      // 2. Add the new news object to the 'news' collection in Firestore
+      const newsCollectionRef = collection(firestore, 'news');
+      addDocumentNonBlocking(newsCollectionRef, finalNewsObject);
+
+      toast({
+        title: '发布成功！',
+        description: '新闻已成功发布。',
+      });
+      form.reset();
+      setImagePreview(null);
+      router.push('/admin'); // Redirect back to admin dashboard
     } catch (error) {
       console.error('发布新闻时出错:', error);
       toast({

@@ -1,8 +1,8 @@
 'use server';
 
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
 
 // This function initializes Firebase Admin SDK. It's safe to call multiple times.
 function initializeAdmin() {

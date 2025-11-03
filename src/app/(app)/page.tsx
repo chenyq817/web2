@@ -38,8 +38,8 @@ export default function HomePage() {
       icon: FileText,
       title: "校园帖子",
       description: "看看正在发生什么，分享你的瞬间。",
-      color: "bg-green-100 dark:bg-green-900/50",
-      textColor: "text-green-600 dark:text-green-400"
+       color: "bg-green-100 dark:bg-green-900/50",
+       textColor: "text-green-600 dark:text-green-400"
     },
     {
       href: "/social",
@@ -67,17 +67,17 @@ export default function HomePage() {
           className="relative rounded-xl border bg-card text-card-foreground shadow-lg w-full p-8 md:p-12 overflow-hidden"
         >
           {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt={heroImage.description}
-              fill
-              className="object-cover z-0"
-              data-ai-hint={heroImage.imageHint}
-            />
+             <Image
+                src={heroImage.imageUrl}
+                alt={heroImage.description}
+                fill
+                className="object-cover z-0"
+                data-ai-hint={heroImage.imageHint}
+             />
           )}
           <div className="absolute inset-0 bg-black/50 z-10" />
           <div className="relative z-20 flex flex-col items-start text-white">
-            <h2 className="text-4xl font-bold font-headline">欢迎来到“I know hust”</h2>
+            <h2 className="text-4xl font-bold font-headline">欢迎来到“喻园回声”</h2>
             <p className="mt-2 text-lg text-gray-200">明德厚学，求是创新</p>
           </div>
         </section>
@@ -88,7 +88,7 @@ export default function HomePage() {
               <Card className="h-full flex flex-col hover:shadow-xl hover:-translate-y-1 transition-transform duration-300">
                 <CardHeader>
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${item.color}`}>
-                    <item.icon className={`w-6 h-6 ${item.textColor}`} />
+                     <item.icon className={`w-6 h-6 ${item.textColor}`} />
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow">

@@ -277,6 +277,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["chatId", "senderId", "createdAt"]
+    },
+    "News": {
+      "title": "News",
+      "type": "object",
+      "description": "Represents a news article.",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string", "enum": ["学术", "体育", "校园生活", "其他"] },
+        "excerpt": { "type": "string" },
+        "imageBase64": { "type": "string", "description": "Base64 encoded image for the article." },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "category", "excerpt", "date", "createdAt"]
     }
   },
   "auth": {
@@ -321,6 +336,12 @@
         "$ref": "#/entities/ChatMessage"
       },
       "description": "Subcollection holding all messages for a specific chat."
+    },
+    "/news/{newsId}": {
+      "schema": {
+        "$ref": "#/entities/News"
+      },
+      "description": "Holds all news articles for the campus."
     }
   }
 }

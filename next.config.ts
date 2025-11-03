@@ -1,5 +1,5 @@
 
-import type { NextConfig } from 'next';
+import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -10,10 +10,11 @@ const nextConfig: NextConfig = {
         '*.firebase.app',
         '*.cloud.run',
         'localhost:9002',
+        'www.your-cool-app.com',
       ],
     },
+    serverComponentsExternalPackages: ['!raw-loader'],
   },
-  serverExternalPackages: ['!raw-loader'],
   typescript: {
     ignoreBuildErrors: true,
   },

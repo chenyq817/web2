@@ -29,20 +29,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Eye, Newspaper, PlusCircle, ArrowLeft, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, PlusCircle, ArrowLeft, Trash2, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useUser, useFirestore, deleteDocumentNonBlocking, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, deleteDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { collection, query, orderBy, doc, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, doc, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
 import type { WithId } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import Link from "next/link";
-import { newsItems as initialNewsItems } from '@/lib/news-data';
 import { useToast } from "@/hooks/use-toast";
-import { deleteNewsItem } from './actions';
+import { oldNewsData } from "@/lib/old-news-data";
 
 type ContentItem = {
     id: string;
@@ -60,7 +59,11 @@ type UserProfile = WithId<{
   email?: string; 
 }>;
 
-type NewsItem = typeof initialNewsItems[0];
+type NewsItem = WithId<{
+    title: string;
+    category: string;
+    date: string;
+}>;
 
 
 export default function AdminPage() {
@@ -71,18 +74,23 @@ export default function AdminPage() {
 
   const [allContent, setAllContent] = useState<ContentItem[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [news, setNews] = useState<NewsItem[]>(initialNewsItems);
-  const [isContentLoading, setIsContentLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const isAuthorized = user?.email === 'admin@111.com';
+
+  // Fetch news from Firestore
+  const newsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'news'), orderBy('date', 'desc'));
+  }, [firestore]);
+  const { data: news, isLoading: isNewsLoading } = useCollection<NewsItem>(newsQuery);
 
   useEffect(() => {
     if (!user || !isAuthorized) return;
     if (!firestore) return;
 
     const fetchAllData = async () => {
-        setIsContentLoading(true);
         try {
             const postsQuery = query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
             const postsSnapshot = await getDocs(postsQuery);
@@ -115,28 +123,63 @@ export default function AdminPage() {
 
         } catch (error) {
             console.error("获取管理员面板数据时出错:", error);
-        } finally {
-            setIsContentLoading(false);
         }
     };
 
     fetchAllData();
   }, [firestore, user, isAuthorized]);
 
+  const handleImportOldNews = async () => {
+    if (!firestore) return;
+    setIsImporting(true);
+    try {
+        const batch = writeBatch(firestore);
+        const newsCollectionRef = collection(firestore, 'news');
 
-  const handleDeleteNews = async (newsId: string, imageId: string) => {
+        oldNewsData.forEach(newsItem => {
+            const docRef = doc(newsCollectionRef); // Create a new doc with a random ID
+            const image = PlaceHolderImages.find(img => img.id === newsItem.imageId);
+            
+            const newNewsObject = {
+                title: newsItem.title,
+                category: newsItem.category,
+                excerpt: newsItem.content.substring(0, 100) + '...',
+                content: newsItem.content,
+                imageBase64: image?.imageUrl || '',
+                date: newsItem.date,
+                createdAt: serverTimestamp(),
+            };
+            batch.set(docRef, newNewsObject);
+        });
+        
+        await batch.commit();
+
+        toast({
+            title: "导入成功",
+            description: `成功将 ${oldNewsData.length} 条旧新闻导入数据库。`,
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "导入失败",
+            description: error instanceof Error ? error.message : "发生未知错误。",
+        });
+    } finally {
+        setIsImporting(false);
+    }
+  };
+
+
+  const handleDeleteNews = async (newsId: string) => {
+    if(!firestore) return;
     setIsDeleting(newsId);
     try {
-      const result = await deleteNewsItem({ newsId, imageId });
-      if (result.success) {
-        setNews(prevNews => prevNews.filter(item => item.id !== newsId));
-        toast({
-          title: "删除成功",
-          description: "新闻已成功删除。",
-        });
-      } else {
-        throw new Error(result.message);
-      }
+      const newsRef = doc(firestore, 'news', newsId);
+      deleteDocumentNonBlocking(newsRef);
+      toast({
+        title: "删除成功",
+        description: "新闻已开始删除。",
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -190,14 +233,22 @@ export default function AdminPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>新闻管理</CardTitle>
-                <CardDescription>创建和管理静态新闻内容。</CardDescription>
+                <CardDescription>创建和管理新闻内容。</CardDescription>
               </div>
-              <Button asChild>
-                <Link href="/admin/create-news">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  发布新闻
-                </Link>
-              </Button>
+              <div className="flex gap-2">
+                 
+                    <Button onClick={handleImportOldNews} disabled={isImporting} variant="outline">
+                      {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                      一键导入旧新闻
+                    </Button>
+                  
+                <Button asChild>
+                  <Link href="/admin/create-news">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    发布新闻
+                  </Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -210,7 +261,13 @@ export default function AdminPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {news.slice(0, 5).map(item => (
+                        {isNewsLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center">
+                              <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                            </TableCell>
+                          </TableRow>
+                        ) : news?.map(item => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.title}</TableCell>
                                 <TableCell>
@@ -235,7 +292,7 @@ export default function AdminPage() {
                                       <AlertDialogFooter>
                                         <AlertDialogCancel>取消</AlertDialogCancel>
                                         <AlertDialogAction
-                                          onClick={() => handleDeleteNews(item.id, item.imageId)}
+                                          onClick={() => handleDeleteNews(item.id)}
                                           className="bg-destructive hover:bg-destructive/90"
                                         >
                                           确认删除
@@ -248,9 +305,9 @@ export default function AdminPage() {
                         ))}
                     </TableBody>
                 </Table>
-                 {!isContentLoading && news.length === 0 && (
+                 {!isNewsLoading && news?.length === 0 && (
                     <div className="text-center p-8 text-muted-foreground">
-                        暂无新闻。
+                        暂无新闻。点击右上角的按钮来导入或创建新闻。
                     </div>
                 )}
             </CardContent>
@@ -300,7 +357,7 @@ export default function AdminPage() {
                         })}
                     </TableBody>
                 </Table>
-                 {isContentLoading ? <div className="text-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : allUsers.length === 0 && (
+                 {allUsers.length === 0 && (
                     <div className="text-center p-8 text-muted-foreground">
                         未找到其他用户。
                     </div>
@@ -358,7 +415,7 @@ export default function AdminPage() {
                         ))}
                     </TableBody>
                 </Table>
-                 {isContentLoading ? <div className="text-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div> : allContent.length === 0 && (
+                 {allContent.length === 0 && (
                     <div className="text-center p-8 text-muted-foreground">
                         没有需要审核的内容。
                     </div>
