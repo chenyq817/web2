@@ -1,0 +1,326 @@
+
+{
+  "entities": {
+    "Post": {
+      "title": "Post",
+      "type": "object",
+      "description": "Represents a post in the campus social circle.",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "description": "ID of the user who created the post."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the user who created the post."
+        },
+        "authorAvatarId": {
+          "type": "string",
+          "description": "Avatar ID of the user who created the post."
+        },
+        "authorImageBase64": {
+          "type": "string",
+          "description": "Base64 encoded string of the user's custom avatar at the time of posting."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the post."
+        },
+        "imageBase64": {
+          "type": "string",
+          "description": "Base64 encoded string of the image attached to the post."
+        },
+        "likeIds": {
+          "type": "array",
+          "description": "Array of user IDs who liked the post.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commentCount": {
+          "type": "number",
+          "description": "The number of comments on the post."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the post was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "authorId",
+        "authorName",
+        "content",
+        "likeIds",
+        "commentCount",
+        "createdAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's public profile information.",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "displayName_lowercase": {
+          "type": "string",
+          "description": "The user's display name in lowercase for searching."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "avatarId": {
+          "type": "string",
+          "description": "The ID for the user's default avatar image from the placeholder list."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL of the user's custom uploaded avatar."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short bio or signature for the user."
+        },
+        "age": {
+          "type": "number",
+          "description": "The user's age."
+        },
+        "gender": {
+          "type": "string",
+          "description": "The user's gender.",
+          "enum": [
+            "男",
+            "女",
+            "其他",
+            "不愿透露"
+          ]
+        },
+        "address": {
+          "type": "string",
+          "description": "The user's address or location."
+        },
+        "imageBase64": {
+          "type": "string",
+          "description": "Base64 encoded string of the user's avatar."
+        },
+        "friendIds": {
+          "type": "array",
+          "description": "List of user IDs that are friends with this user.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "friendRequestsSent": {
+          "type": "array",
+          "description": "List of friend requests sent by this user.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "userId": { "type": "string", "description": "The ID of the user to whom the request was sent." },
+              "message": { "type": "string", "description": "The verification message sent with the request." }
+            },
+            "required": ["userId"]
+          }
+        },
+        "friendRequestsReceived": {
+          "type": "array",
+          "description": "List of friend requests received by this user.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "userId": { "type": "string", "description": "The ID of the user who sent the request." },
+              "message": { "type": "string", "description": "The verification message received with the request." }
+            },
+            "required": ["userId"]
+          }
+        },
+        "lastActive": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the user's last activity."
+        }
+      },
+      "required": [
+        "displayName",
+        "displayName_lowercase",
+        "email",
+        "avatarId"
+      ]
+    },
+    "Comment": {
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on a post.",
+      "properties": {
+        "postId": {
+          "type": "string",
+          "description": "ID of the post to which the comment belongs."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "ID of the user who created the comment."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the user who created the comment."
+        },
+        "authorAvatarId": {
+          "type": "string",
+          "description": "Avatar ID of the user who created the comment."
+        },
+        "authorImageBase64": {
+          "type": "string",
+          "description": "Base64 encoded string of the user's custom avatar at the time of commenting."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "postId",
+        "authorId",
+        "authorName",
+        "content",
+        "createdAt"
+      ]
+    },
+    "WallMessage": {
+      "title": "Wall Message",
+      "type": "object",
+      "description": "Represents a public message on the community wall.",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "ID of the user who posted the message."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the user who posted the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was posted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "content",
+        "authorId",
+        "authorName",
+        "createdAt"
+      ]
+    },
+    "Chat": {
+      "title": "Chat",
+      "type": "object",
+      "description": "Represents a private chat session between two or more users.",
+      "properties": {
+        "participantIds": {
+          "type": "array",
+          "description": "Array of user IDs participating in the chat.",
+          "items": { "type": "string" }
+        },
+        "participantInfo": {
+          "type": "object",
+          "description": "Map of participant user IDs to their profile info for easy display.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "displayName": { "type": "string" },
+              "avatarId": { "type": "string" },
+              "imageBase64": { "type": "string" }
+            },
+            "required": ["displayName", "avatarId"]
+          }
+        },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "content": { "type": "string" },
+            "senderId": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "required": ["participantIds", "participantInfo"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "type": "object",
+      "description": "Represents a single message within a chat.",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message. Optional if an image is sent."
+        },
+        "imageBase64": {
+          "type": "string",
+          "description": "Base64 encoded string of the image being sent. Optional."
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "/posts/{postId}": {
+      "schema": {
+        "$ref": "#/entities/Post"
+      },
+      "description": "Holds all the posts created by users in the social circle."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/Comment"
+      },
+      "description": "Holds all comments associated with a specific post. Admin can delete any comment."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Holds public profile information for each user."
+    },
+    "/wallMessages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/WallMessage"
+      },
+      "description": "Holds all public messages on the community wall."
+    },
+    "/chats/{chatId}": {
+      "schema": {
+        "$ref": "#/entities/Chat"
+      },
+      "description": "Holds metadata for each private chat session."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
+      },
+      "description": "Subcollection holding all messages for a specific chat."
+    }
+  }
+}
