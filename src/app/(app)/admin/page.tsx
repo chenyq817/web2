@@ -41,28 +41,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { oldNewsData } from "@/lib/old-news-data";
 
 type ContentItem = {
-    id: string;
-    type: '帖子' | '留言';
-    authorId: string;
-    authorName: string;
-    content: string;
-    createdAt: any;
+  id: string;
+  type: '帖子' | '留言';
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: any;
 };
 
 type UserProfile = WithId<{
   displayName: string;
   avatarId: string;
   imageBase64?: string;
-  email?: string; 
+  email?: string;
 }>;
 
 type NewsItem = WithId<{
-    title: string;
-    category: string;
-    date: string;
+  title: string;
+  category: string;
+  date: string;
 }>;
 
 
@@ -75,7 +74,7 @@ export default function AdminPage() {
   const [allContent, setAllContent] = useState<ContentItem[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
+
 
   const isAuthorized = user?.email === 'admin@111.com';
 
@@ -91,87 +90,49 @@ export default function AdminPage() {
     if (!firestore) return;
 
     const fetchAllData = async () => {
-        try {
-            const postsQuery = query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
-            const postsSnapshot = await getDocs(postsQuery);
-            const postsData = postsSnapshot.docs.map(doc => ({
-                ...(doc.data() as any),
-                id: doc.id,
-                type: '帖子' as const,
-            }));
+      try {
+        const postsQuery = query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
+        const postsSnapshot = await getDocs(postsQuery);
+        const postsData = postsSnapshot.docs.map(doc => ({
+          ...(doc.data() as any),
+          id: doc.id,
+          type: '帖子' as const,
+        }));
 
-            const wallMessagesQuery = query(collection(firestore, 'wallMessages'), orderBy('createdAt', 'desc'));
-            const wallMessagesSnapshot = await getDocs(wallMessagesQuery);
-            const wallMessagesData = wallMessagesSnapshot.docs.map(doc => ({
-                ...(doc.data() as any),
-                id: doc.id,
-                type: '留言' as const,
-            }));
+        const wallMessagesQuery = query(collection(firestore, 'wallMessages'), orderBy('createdAt', 'desc'));
+        const wallMessagesSnapshot = await getDocs(wallMessagesQuery);
+        const wallMessagesData = wallMessagesSnapshot.docs.map(doc => ({
+          ...(doc.data() as any),
+          id: doc.id,
+          type: '留言' as const,
+        }));
 
-            const combinedContent = [...postsData, ...wallMessagesData]
-                .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+        const combinedContent = [...postsData, ...wallMessagesData]
+          .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 
-            setAllContent(combinedContent);
-            
-            const usersQuery = query(collection(firestore, 'users'));
-            const usersSnapshot = await getDocs(usersQuery);
-            const usersData = usersSnapshot.docs
-              .map(doc => ({ id: doc.id, ...doc.data() } as UserProfile))
-              .filter(u => u.id !== user.uid); 
-            
-            setAllUsers(usersData);
+        setAllContent(combinedContent);
 
-        } catch (error) {
-            console.error("获取管理员面板数据时出错:", error);
-        }
+        const usersQuery = query(collection(firestore, 'users'));
+        const usersSnapshot = await getDocs(usersQuery);
+        const usersData = usersSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as UserProfile))
+          .filter(u => u.id !== user.uid);
+
+        setAllUsers(usersData);
+
+      } catch (error) {
+        console.error("获取管理员面板数据时出错:", error);
+      }
     };
 
     fetchAllData();
   }, [firestore, user, isAuthorized]);
 
-  const handleImportOldNews = async () => {
-    if (!firestore) return;
-    setIsImporting(true);
-    try {
-        const batch = writeBatch(firestore);
-        const newsCollectionRef = collection(firestore, 'news');
 
-        oldNewsData.forEach(newsItem => {
-            const docRef = doc(newsCollectionRef); // Create a new doc with a random ID
-            const image = PlaceHolderImages.find(img => img.id === newsItem.imageId);
-            
-            const newNewsObject = {
-                title: newsItem.title,
-                category: newsItem.category,
-                excerpt: newsItem.content.substring(0, 100) + '...',
-                content: newsItem.content,
-                imageBase64: image?.imageUrl || '',
-                date: newsItem.date,
-                createdAt: serverTimestamp(),
-            };
-            batch.set(docRef, newNewsObject);
-        });
-        
-        await batch.commit();
-
-        toast({
-            title: "导入成功",
-            description: `成功将 ${oldNewsData.length} 条旧新闻导入数据库。`,
-        });
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "导入失败",
-            description: error instanceof Error ? error.message : "发生未知错误。",
-        });
-    } finally {
-        setIsImporting(false);
-    }
-  };
 
 
   const handleDeleteNews = async (newsId: string) => {
-    if(!firestore) return;
+    if (!firestore) return;
     setIsDeleting(newsId);
     try {
       const newsRef = doc(firestore, 'news', newsId);
@@ -201,25 +162,25 @@ export default function AdminPage() {
 
 
   if (isUserLoading) {
-     return (
+    return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
         <p className="ml-4">正在验证权限...</p>
       </div>
     );
   }
-  
+
   if (!isAuthorized) {
     return (
       <div className="flex flex-col h-full items-center justify-center text-center">
-        <Header title="无权访问"/>
+        <Header title="无权访问" />
         <main className="flex-1 flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-bold">无权访问</h2>
-            <p className="text-muted-foreground mt-2">您没有权限查看此页面。</p>
-            <Button onClick={() => router.push('/')} className="mt-6">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                返回主页
-            </Button>
+          <h2 className="text-2xl font-bold">无权访问</h2>
+          <p className="text-muted-foreground mt-2">您没有权限查看此页面。</p>
+          <Button onClick={() => router.push('/')} className="mt-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            返回主页
+          </Button>
         </main>
       </div>
     );
@@ -230,201 +191,194 @@ export default function AdminPage() {
       <Header title="管理后台" />
       <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6">
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>新闻管理</CardTitle>
-                <CardDescription>创建和管理新闻内容。</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>新闻管理</CardTitle>
+              <CardDescription>创建和管理新闻内容。</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild>
+                <Link href="/admin/create-news">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  发布新闻
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>标题</TableHead>
+                  <TableHead>分类</TableHead>
+                  <TableHead>发布日期</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isNewsLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                    </TableCell>
+                  </TableRow>
+                ) : news?.map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{item.category}</Badge>
+                    </TableCell>
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={isDeleting === item.id}>
+                            {isDeleting === item.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            删除
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              此操作无法撤销。这将永久删除该新闻条目。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteNews(item.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              确认删除
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {!isNewsLoading && news?.length === 0 && (
+              <div className="text-center p-8 text-muted-foreground">
+                暂无新闻。点击右上角的按钮来创建新闻。
               </div>
-              <div className="flex gap-2">
-                 
-                    <Button onClick={handleImportOldNews} disabled={isImporting} variant="outline">
-                      {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                      一键导入旧新闻
-                    </Button>
-                  
-                <Button asChild>
-                  <Link href="/admin/create-news">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    发布新闻
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>标题</TableHead>
-                            <TableHead>分类</TableHead>
-                            <TableHead>发布日期</TableHead>
-                             <TableHead className="text-right">操作</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isNewsLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center">
-                              <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                            </TableCell>
-                          </TableRow>
-                        ) : news?.map(item => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.title}</TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">{item.category}</Badge>
-                                </TableCell>
-                                <TableCell>{item.date}</TableCell>
-                                <TableCell className="text-right">
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="destructive" size="sm" disabled={isDeleting === item.id}>
-                                        {isDeleting === item.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                        删除
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          此操作无法撤销。这将永久删除该新闻条目。
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>取消</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteNews(item.id)}
-                                          className="bg-destructive hover:bg-destructive/90"
-                                        >
-                                          确认删除
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                 {!isNewsLoading && news?.length === 0 && (
-                    <div className="text-center p-8 text-muted-foreground">
-                        暂无新闻。点击右上角的按钮来导入或创建新闻。
-                    </div>
-                )}
-            </CardContent>
+            )}
+          </CardContent>
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle>用户管理</CardTitle>
-                <CardDescription>查看和管理系统中除您之外的所有用户。</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>头像</TableHead>
-                            <TableHead>昵称</TableHead>
-                            <TableHead><span className="sr-only">操作</span></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {allUsers.map(profile => {
-                          const avatarSrc = profile.imageBase64 || PlaceHolderImages.find(p => p.id === profile.avatarId)?.imageUrl;
-                          return (
-                            <TableRow key={profile.id}>
-                                <TableCell>
-                                  <Link href={`/profile/${profile.id}`}>
-                                    <Avatar>
-                                        <AvatarImage src={avatarSrc} alt={profile.displayName} />
-                                        <AvatarFallback>{profile.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                  </Link>
-                                </TableCell>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                  {profile.displayName}
-                                  {profile.email === 'admin@111.com' && <Badge variant="destructive">管理员</Badge>}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button asChild variant="outline" size="sm">
-                                      <Link href={`/profile/${profile.id}`}>
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        查看资料
-                                      </Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                    </TableBody>
-                </Table>
-                 {allUsers.length === 0 && (
-                    <div className="text-center p-8 text-muted-foreground">
-                        未找到其他用户。
-                    </div>
-                )}
-            </CardContent>
+          <CardHeader>
+            <CardTitle>用户管理</CardTitle>
+            <CardDescription>查看和管理系统中除您之外的所有用户。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>头像</TableHead>
+                  <TableHead>昵称</TableHead>
+                  <TableHead><span className="sr-only">操作</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allUsers.map(profile => {
+                  const avatarSrc = profile.imageBase64 || PlaceHolderImages.find(p => p.id === profile.avatarId)?.imageUrl;
+                  return (
+                    <TableRow key={profile.id}>
+                      <TableCell>
+                        <Link href={`/profile/${profile.id}`}>
+                          <Avatar>
+                            <AvatarImage src={avatarSrc} alt={profile.displayName} />
+                            <AvatarFallback>{profile.displayName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="font-medium flex items-center gap-2">
+                        {profile.displayName}
+                        {profile.email === 'admin@111.com' && <Badge variant="destructive">管理员</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/profile/${profile.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            查看资料
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {allUsers.length === 0 && (
+              <div className="text-center p-8 text-muted-foreground">
+                未找到其他用户。
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle>内容审核</CardTitle>
-                <CardDescription>审核和管理所有用户提交的帖子和留言。</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>作者</TableHead>
-                            <TableHead>内容</TableHead>
-                            <TableHead>类型</TableHead>
-                            <TableHead>创建时间</TableHead>
-                            <TableHead><span className="sr-only">操作</span></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {allContent.map(item => (
-                            <TableRow key={`${item.type}-${item.id}`}>
-                                <TableCell className="font-medium">{item.authorName}</TableCell>
-                                <TableCell className="truncate max-w-sm">{item.content}</TableCell>
-                                <TableCell>
-                                    <Badge variant={item.type === '帖子' ? 'secondary' : 'outline'}>
-                                        {item.type}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
-                                <TableCell>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">切换菜单</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>操作</DropdownMenuLabel>
-                                            <DropdownMenuItem
-                                              className="text-destructive"
-                                              onClick={() => handleDeleteContent(item)}
-                                            >
-                                              删除
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                 {allContent.length === 0 && (
-                    <div className="text-center p-8 text-muted-foreground">
-                        没有需要审核的内容。
-                    </div>
-                )}
-            </CardContent>
+          <CardHeader>
+            <CardTitle>内容审核</CardTitle>
+            <CardDescription>审核和管理所有用户提交的帖子和留言。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>作者</TableHead>
+                  <TableHead>内容</TableHead>
+                  <TableHead>类型</TableHead>
+                  <TableHead>创建时间</TableHead>
+                  <TableHead><span className="sr-only">操作</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allContent.map(item => (
+                  <TableRow key={`${item.type}-${item.id}`}>
+                    <TableCell className="font-medium">{item.authorName}</TableCell>
+                    <TableCell className="truncate max-w-sm">{item.content}</TableCell>
+                    <TableCell>
+                      <Badge variant={item.type === '帖子' ? 'secondary' : 'outline'}>
+                        {item.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">切换菜单</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>操作</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeleteContent(item)}
+                          >
+                            删除
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {allContent.length === 0 && (
+              <div className="text-center p-8 text-muted-foreground">
+                没有需要审核的内容。
+              </div>
+            )}
+          </CardContent>
         </Card>
       </main>
     </div>
   );
 }
 
-    
