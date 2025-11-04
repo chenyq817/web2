@@ -29,12 +29,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Eye, PlusCircle, ArrowLeft, Trash2, Upload } from "lucide-react";
+import { Eye as EyeIcon, PlusCircleIcon, ArrowLeft as ArrowLeftIcon, Trash2 as Trash2Icon, Upload as UploadIcon, Loader2, MoreHorizontalIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useUser, useFirestore, deleteDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+//import { Loader2 } from "lucide-react";
 import { collection, query, orderBy, doc, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
 import type { WithId } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -178,7 +178,7 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold">无权访问</h2>
           <p className="text-muted-foreground mt-2">您没有权限查看此页面。</p>
           <Button onClick={() => router.push('/')} className="mt-6">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
             返回主页
           </Button>
         </main>
@@ -199,7 +199,7 @@ export default function AdminPage() {
             <div className="flex gap-2">
               <Button asChild>
                 <Link href="/admin/create-news">
-                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <PlusCircleIcon className="mr-2 h-4 w-4" />
                   发布新闻
                 </Link>
               </Button>
@@ -233,7 +233,7 @@ export default function AdminPage() {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm" disabled={isDeleting === item.id}>
-                            {isDeleting === item.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            {isDeleting === item.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2Icon className="mr-2 h-4 w-4" />}
                             删除
                           </Button>
                         </AlertDialogTrigger>
@@ -302,7 +302,7 @@ export default function AdminPage() {
                       <TableCell className="text-right">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/profile/${profile.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
+                            <EyeIcon className="mr-2 h-4 w-4" />
                             查看资料
                           </Link>
                         </Button>
@@ -351,7 +351,7 @@ export default function AdminPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontalIcon className="h-4 w-4" />
                             <span className="sr-only">切换菜单</span>
                           </Button>
                         </DropdownMenuTrigger>
