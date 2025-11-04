@@ -107,7 +107,7 @@ export default function NewsPage() {
           </TabsList>
           
           <TabsContent value="all">
-            {renderNewsList(allNews, '全部')}
+            {renderNewsList( allNews ?? undefined, '全部')}
           </TabsContent>
           <TabsContent value="academics">
             {renderNewsList(academicNews, '学术')}
